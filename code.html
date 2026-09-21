@@ -1,0 +1,260 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>Badminton Scoreboard - Mobile Landscape</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&amp;family=Chakra+Petch:wght@700;800&amp;display=swap" rel="stylesheet">
+<style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .score-number {
+      font-family: 'Chakra Petch', monospace;
+      font-variant-numeric: tabular-nums;
+      line-height: 0.9;
+    }
+    .glow-cyan {
+      box-shadow: 0 0 35px -8px rgba(6, 182, 212, 0.35);
+    }
+    .glow-amber {
+      box-shadow: 0 0 35px -8px rgba(245, 158, 11, 0.35);
+    }
+    .glow-winner {
+      box-shadow: 0 0 45px 0px rgba(16, 185, 129, 0.45);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen overflow-hidden flex flex-col p-2 sm:p-3 select-none">
+<!-- Compact Landscape Header -->
+<header class="w-full flex-shrink-0 flex items-center justify-between px-2 sm:px-4 py-1 sm:py-1.5 border-b border-slate-800/80 bg-slate-900/50 backdrop-blur-md rounded-2xl mb-1.5 sm:mb-2">
+<!-- Brand / Title -->
+<div class="flex items-center gap-2">
+<div class="p-1 rounded-lg bg-cyan-500/10 text-cyan-400">
+<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24">
+<path d="M12 2a5 5 0 0 0-5 5c0 2.2 1.4 4.1 3.4 4.8l-1.4 7.2h6l-1.4-7.2A5 5 0 0 0 12 2z"></path>
+<path d="M12 19v3"></path>
+<path d="M9 14h6"></path>
+</svg>
+</div>
+<div>
+<h1 class="text-xs sm:text-sm md:text-base font-extrabold tracking-wider text-white leading-tight">
+          BADMINTON <span class="text-cyan-400">SCOREBOARD</span>
+</h1>
+</div>
+</div>
+<!-- Center Match Status & Notification -->
+<div class="flex items-center gap-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800/90 border border-slate-700 text-[10px] sm:text-xs font-bold tracking-wider text-slate-300 uppercase" id="live-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+<span class="text-emerald-400 font-semibold">LIVE</span> • 21 PTS
+      </div>
+<!-- Winner Popup Alert Pill (shown when won) -->
+<div class="hidden items-center gap-1.5 px-3 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-xs sm:text-sm animate-pulse shadow-md" id="winner-banner">
+<span class="">🏆</span>
+<span id="winner-text" class="">ĐỘI A THẮNG!</span>
+</div>
+</div>
+<!-- Quick Compact Reset Match Button -->
+<button class="group inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 rounded-xl bg-slate-800 hover:bg-rose-500/20 active:scale-95 text-slate-300 hover:text-rose-400 border border-slate-700 hover:border-rose-500/40 text-xs font-bold tracking-wide transition-all duration-150" id="reset-btn" onclick="resetScores()" title="Đặt lại trận đấu về 0-0">
+<svg class="w-3.5 h-3.5 transition-transform duration-300 group-hover:-rotate-180 text-slate-400 group-hover:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+<span class="font-extrabold text-[11px] sm:text-xs">RESET</span>
+</button>
+</header>
+<!-- Main Landscape Scoreboard Area (Full height split left & right) -->
+<main class="w-full flex-1 grid grid-cols-2 gap-2 sm:gap-3 min-h-0 relative">
+<!-- Central Floating VS & Quick Switcher -->
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none flex flex-col items-center gap-1">
+<div class="px-2.5 py-1 rounded-full bg-slate-950/90 border border-slate-700/80 text-slate-300 font-black text-[10px] sm:text-xs tracking-widest shadow-xl backdrop-blur-md">
+        VS
+      </div>
+</div>
+<!-- Team A Card (Left Side) -->
+<section class="relative flex flex-col justify-between h-full bg-gradient-to-b from-slate-900/95 to-slate-950/95 border-2 border-cyan-500/50 rounded-2xl sm:rounded-3xl p-2 sm:p-4 overflow-hidden glow-cyan transition-all duration-300" id="card-a">
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
+<!-- Top Row: Team Name & Status -->
+<div class="flex items-center justify-between gap-2 z-10">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-3 h-3 rounded-full bg-cyan-400 ring-4 ring-cyan-400/20 flex-shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<input class="bg-transparent text-base sm:text-xl md:text-2xl font-black text-white border-b border-transparent hover:border-slate-700 focus:border-cyan-400 focus:outline-none transition-colors truncate py-0 leading-tight" id="team-a-name" title="Chạm để đổi tên đội" type="text" value="Đội A">
+
+</div>
+</div>
+<span class="hidden text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-lg animate-bounce" id="badge-a-winner">
+          WINNER 🏆
+        </span>
+</div>
+<!-- Center Giant Score Display (Tap to +1) -->
+<div class="flex-1 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform duration-100 group select-none py-1" onclick="adjustScore('a', 1)" role="button" title="Chạm vào đây để tăng nhanh 1 điểm cho Đội A">
+<span class="score-number text-[24vw] sm:text-[21vw] font-black text-cyan-400 tracking-tight transition-all duration-150 transform scale-100 drop-shadow-[0_0_25px_rgba(6,182,212,0.35)]" id="score-a">
+          0
+        </span>
+<span class="text-[10px] sm:text-xs text-slate-500 group-hover:text-cyan-400/80 font-bold uppercase tracking-wider transition-colors -mt-2">
+          Chạm số để +1
+        </span>
+</div>
+<!-- Bottom Touch Controls (Large touch targets for thumbs) -->
+<div class="grid grid-cols-4 gap-2 z-10 mt-auto pt-1">
+<!-- Minus Button (1 col) -->
+<button aria-label="Giảm điểm Đội A" class="col-span-1 flex items-center justify-center py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl bg-slate-800/90 active:bg-slate-700 hover:bg-slate-700/80 text-slate-300 hover:text-white border border-slate-700 active:scale-95 transition-all shadow-md focus:outline-none" onclick="adjustScore('a', -1)">
+<svg class="w-6 h-6 sm:w-7 sm:h-7 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<line x1="5" x2="19" y1="12" y2="12"></line>
+</svg>
+</button>
+<!-- Plus Button (3 cols) -->
+<button aria-label="Tăng điểm Đội A" class="col-span-3 flex items-center justify-center gap-2 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-300 active:scale-95 text-slate-950 font-black text-base sm:text-xl transition-all shadow-lg shadow-cyan-500/25 focus:outline-none" onclick="adjustScore('a', 1)">
+<svg class="w-6 h-6 sm:w-7 sm:h-7 stroke-[3.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<line x1="12" x2="12" y1="5" y2="19"></line>
+<line x1="5" x2="19" y1="12" y2="12"></line>
+</svg>
+<span class="tracking-wider text-sm sm:text-base font-extrabold uppercase">ĐIỂM +1</span>
+</button>
+</div>
+</section>
+<!-- Team B Card (Right Side) -->
+<section class="relative flex flex-col justify-between h-full bg-gradient-to-b from-slate-900/95 to-slate-950/95 border-2 border-amber-500/50 rounded-2xl sm:rounded-3xl p-2 sm:p-4 overflow-hidden glow-amber transition-all duration-300" id="card-b">
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+<!-- Top Row: Team Name & Status -->
+<div class="flex items-center justify-between gap-2 z-10">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-3 h-3 rounded-full bg-amber-400 ring-4 ring-amber-400/20 flex-shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<input class="bg-transparent text-base sm:text-xl md:text-2xl font-black text-white border-b border-transparent hover:border-slate-700 focus:border-amber-400 focus:outline-none transition-colors truncate py-0 leading-tight" id="team-b-name" title="Chạm để đổi tên đội" type="text" value="Đội B">
+
+</div>
+</div>
+<span class="hidden text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-lg animate-bounce" id="badge-b-winner">
+          WINNER 🏆
+        </span>
+</div>
+<!-- Center Giant Score Display (Tap to +1) -->
+<div class="flex-1 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform duration-100 group select-none py-1" onclick="adjustScore('b', 1)" role="button" title="Chạm vào đây để tăng nhanh 1 điểm cho Đội B">
+<span class="score-number text-[24vw] sm:text-[21vw] font-black text-amber-400 tracking-tight transition-all duration-150 transform scale-100 drop-shadow-[0_0_25px_rgba(245,158,11,0.35)]" id="score-b">
+          0
+        </span>
+<span class="text-[10px] sm:text-xs text-slate-500 group-hover:text-amber-400/80 font-bold uppercase tracking-wider transition-colors -mt-2">
+          Chạm số để +1
+        </span>
+</div>
+<!-- Bottom Touch Controls (Large touch targets for thumbs) -->
+<div class="grid grid-cols-4 gap-2 z-10 mt-auto pt-1">
+<!-- Minus Button (1 col) -->
+<button aria-label="Giảm điểm Đội B" class="col-span-1 flex items-center justify-center py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl bg-slate-800/90 active:bg-slate-700 hover:bg-slate-700/80 text-slate-300 hover:text-white border border-slate-700 active:scale-95 transition-all shadow-md focus:outline-none" onclick="adjustScore('b', -1)">
+<svg class="w-6 h-6 sm:w-7 sm:h-7 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<line x1="5" x2="19" y1="12" y2="12"></line>
+</svg>
+</button>
+<!-- Plus Button (3 cols) -->
+<button aria-label="Tăng điểm Đội B" class="col-span-3 flex items-center justify-center gap-2 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl bg-amber-500 hover:bg-amber-400 active:bg-amber-300 active:scale-95 text-slate-950 font-black text-base sm:text-xl transition-all shadow-lg shadow-amber-500/25 focus:outline-none" onclick="adjustScore('b', 1)">
+<svg class="w-6 h-6 sm:w-7 sm:h-7 stroke-[3.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<line x1="12" x2="12" y1="5" y2="19"></line>
+<line x1="5" x2="19" y1="12" y2="12"></line>
+</svg>
+<span class="tracking-wider text-sm sm:text-base font-extrabold uppercase">ĐIỂM +1</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Interactive Scoreboard Logic -->
+<script>
+    let scoreA = 0;
+    let scoreB = 0;
+    const WINNING_SCORE = 21;
+
+    const elScoreA = document.getElementById('score-a');
+    const elScoreB = document.getElementById('score-b');
+    const winnerBanner = document.getElementById('winner-banner');
+    const winnerText = document.getElementById('winner-text');
+    const liveBadge = document.getElementById('live-badge');
+    const badgeAWinner = document.getElementById('badge-a-winner');
+    const badgeBWinner = document.getElementById('badge-b-winner');
+    const cardA = document.getElementById('card-a');
+    const cardB = document.getElementById('card-b');
+    const teamANameInput = document.getElementById('team-a-name');
+    const teamBNameInput = document.getElementById('team-b-name');
+
+    function animateNumber(el) {
+      el.classList.add('scale-110');
+      setTimeout(() => {
+        el.classList.remove('scale-110');
+      }, 150);
+    }
+
+    function checkWinner() {
+      // Luật chuẩn BWF: 21 điểm & cách 2 điểm, hoặc chạm 30 điểm
+      const diff = Math.abs(scoreA - scoreB);
+      let winner = null;
+
+      if ((scoreA >= WINNING_SCORE && diff >= 2) || scoreA === 30) {
+        winner = 'a';
+      } else if ((scoreB >= WINNING_SCORE && diff >= 2) || scoreB === 30) {
+        winner = 'b';
+      }
+
+      if (winner === 'a') {
+        const name = teamANameInput.value.trim() || 'ĐỘI A';
+        winnerText.textContent = `${name.toUpperCase()} THẮNG!`;
+        winnerBanner.classList.remove('hidden');
+        winnerBanner.classList.add('flex');
+        liveBadge.classList.add('hidden');
+        badgeAWinner.classList.remove('hidden');
+        badgeBWinner.classList.add('hidden');
+        cardA.classList.add('border-emerald-400', 'glow-winner');
+        cardB.classList.remove('border-emerald-400', 'glow-winner');
+      } else if (winner === 'b') {
+        const name = teamBNameInput.value.trim() || 'ĐỘI B';
+        winnerText.textContent = `${name.toUpperCase()} THẮNG!`;
+        winnerBanner.classList.remove('hidden');
+        winnerBanner.classList.add('flex');
+        liveBadge.classList.add('hidden');
+        badgeBWinner.classList.remove('hidden');
+        badgeAWinner.classList.add('hidden');
+        cardB.classList.add('border-emerald-400', 'glow-winner');
+        cardA.classList.remove('border-emerald-400', 'glow-winner');
+      } else {
+        winnerBanner.classList.add('hidden');
+        winnerBanner.classList.remove('flex');
+        liveBadge.classList.remove('hidden');
+        badgeAWinner.classList.add('hidden');
+        badgeBWinner.classList.add('hidden');
+        cardA.classList.remove('border-emerald-400', 'glow-winner');
+        cardB.classList.remove('border-emerald-400', 'glow-winner');
+      }
+    }
+
+    function adjustScore(team, delta) {
+      if (team === 'a') {
+        scoreA = Math.max(0, scoreA + delta);
+        elScoreA.textContent = scoreA;
+        animateNumber(elScoreA);
+      } else if (team === 'b') {
+        scoreB = Math.max(0, scoreB + delta);
+        elScoreB.textContent = scoreB;
+        animateNumber(elScoreB);
+      }
+      checkWinner();
+    }
+
+    function resetScores() {
+      scoreA = 0;
+      scoreB = 0;
+      elScoreA.textContent = '0';
+      elScoreB.textContent = '0';
+      animateNumber(elScoreA);
+      animateNumber(elScoreB);
+      checkWinner();
+    }
+  </script>
+
+
+</body></html>
