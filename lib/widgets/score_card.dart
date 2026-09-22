@@ -8,7 +8,7 @@ class ScoreCard extends StatelessWidget {
   final Color accentColor;
   final Color gradientEnd;
   final bool isWinner;
-  final bool isGameOver;
+  final bool isScoreEnabled;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
   final VoidCallback onTapScore;
@@ -21,7 +21,7 @@ class ScoreCard extends StatelessWidget {
     required this.accentColor,
     required this.gradientEnd,
     required this.isWinner,
-    required this.isGameOver,
+    required this.isScoreEnabled,
     required this.onIncrement,
     required this.onDecrement,
     required this.onTapScore,
@@ -162,7 +162,7 @@ class ScoreCard extends StatelessWidget {
 
   Widget _buildScoreDisplay() {
     return GestureDetector(
-      onTap: isGameOver ? null : onTapScore,
+      onTap: isScoreEnabled ? onTapScore : null,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -195,7 +195,7 @@ class ScoreCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           // Hint text
-          if (!isGameOver)
+          if (isScoreEnabled)
             Text(
               'CHẠM SỐ ĐỂ +1',
               style: TextStyle(
@@ -220,7 +220,7 @@ class ScoreCard extends StatelessWidget {
             width: 56,
             height: 48,
             child: ElevatedButton(
-              onPressed: isGameOver ? null : onDecrement,
+              onPressed: isScoreEnabled ? onDecrement : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xE61E293B), // slate-800/90
                 disabledBackgroundColor: const Color(0x801E293B),
@@ -242,7 +242,7 @@ class ScoreCard extends StatelessWidget {
             child: SizedBox(
               height: 48,
               child: ElevatedButton.icon(
-                onPressed: isGameOver ? null : onIncrement,
+                onPressed: isScoreEnabled ? onIncrement : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: accentColor,
                   disabledBackgroundColor: accentColor.withValues(alpha: 0.4),

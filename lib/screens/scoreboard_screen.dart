@@ -126,7 +126,7 @@ class _ScoreboardScreenState extends State<ScoreboardScreen>
   // ── Score controls ──
 
   void _adjustScore(String team, int delta) {
-    if (_game.isGameOver) return;
+    if (_gameStatus != GameStatus.running) return;
     HapticFeedback.lightImpact();
     setState(() {
       _game.adjustScore(team, delta);
@@ -562,7 +562,7 @@ class _ScoreboardScreenState extends State<ScoreboardScreen>
             accentColor: const Color(0xFF06B6D4),
             gradientEnd: const Color(0xFF3B82F6),
             isWinner: _game.winner == 'a',
-            isGameOver: _game.isGameOver,
+            isScoreEnabled: _gameStatus == GameStatus.running,
             onIncrement: () => _adjustScore('a', 1),
             onDecrement: () => _adjustScore('a', -1),
             onTapScore: () => _adjustScore('a', 1),
@@ -578,7 +578,7 @@ class _ScoreboardScreenState extends State<ScoreboardScreen>
             accentColor: const Color(0xFFF59E0B),
             gradientEnd: const Color(0xFFF97316),
             isWinner: _game.winner == 'b',
-            isGameOver: _game.isGameOver,
+            isScoreEnabled: _gameStatus == GameStatus.running,
             onIncrement: () => _adjustScore('b', 1),
             onDecrement: () => _adjustScore('b', -1),
             onTapScore: () => _adjustScore('b', 1),

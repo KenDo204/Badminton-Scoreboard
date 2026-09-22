@@ -2185,7 +2185,6 @@ Các chức năng cuối cùng cần có:
 
 Hãy implement chức năng này theo hướng **đơn giản, ổn định và dễ bảo trì**, đồng thời giữ nguyên UI/UX của hình ảnh thiết kế ban đầu.
 
-
 # 52. Tách lịch sử trận đấu thành trang riêng
 
 Hãy chỉnh sửa UI hiện tại theo yêu cầu sau:
@@ -2475,3 +2474,332 @@ Scoreboard
 ```
 
 Mục tiêu là màn hình tính điểm phải **gọn, tập trung vào trận đấu hiện tại**, còn lịch sử trận đấu được quản lý ở **một trang riêng** và hiển thị rõ ràng kết quả của **Đội 1 vs Đội 2**.
+
+
+# 62. Không cho phép tính điểm khi chưa START
+
+Hãy bổ sung thêm logic kiểm tra trạng thái trận đấu trước khi cho phép người dùng thay đổi điểm.
+
+## 62.1. Quy tắc chính
+
+**Khi trận đấu chưa được START thì người dùng không được phép bấm các nút `+` và `-` để thay đổi điểm.**
+
+Trạng thái ban đầu:
+
+```text
+Team 1 = 0
+Team 2 = 0
+Timer = 00:00
+GameStatus = notStarted
+```
+
+Các button:
+
+```text
+[-] [+]       [-] [+]
+```
+
+phải ở trạng thái **disabled** hoặc không thực hiện bất kỳ hành động nào.
+
+---
+
+## 62.2. Chỉ cho phép tính điểm khi Timer đang chạy
+
+Khi người dùng nhấn:
+
+```text
+START
+```
+
+trạng thái chuyển:
+
+```text
+notStarted → running
+```
+
+Lúc này:
+
+* Timer bắt đầu chạy.
+* Button `+` của Team 1 được phép sử dụng.
+* Button `-` của Team 1 được phép sử dụng.
+* Button `+` của Team 2 được phép sử dụng.
+* Button `-` của Team 2 được phép sử dụng.
+
+Ví dụ:
+
+```text
+START
+   ↓
+RUNNING
+   ↓
+Có thể tính điểm
+```
+
+---
+
+# 63. Khi PAUSE
+
+Khi người dùng nhấn:
+
+```text
+PAUSE
+```
+
+trạng thái:
+
+```text
+running → paused
+```
+
+Lúc này **không được phép tính điểm**.
+
+Tức là:
+
+```text
+Timer: PAUSED
+
++ Team 1 → Disabled
+- Team 1 → Disabled
++ Team 2 → Disabled
+- Team 2 → Disabled
+```
+
+Điểm được giữ nguyên trong lúc pause.
+
+Ví dụ:
+
+```text
+Team 1 = 10
+Team 2 = 8
+Timer = 03:25
+
+PAUSE
+
+Team 1 = 10
+Team 2 = 8
+Timer = 03:25
+```
+
+Người dùng phải nhấn:
+
+```text
+RESUME
+```
+
+để tiếp tục.
+
+---
+
+# 64. Khi RESUME
+
+Khi:
+
+```text
+paused → running
+```
+
+thì:
+
+* Timer tiếp tục chạy.
+* Các button `+` / `-` được enable trở lại.
+* Người dùng có thể tiếp tục tính điểm.
+
+Ví dụ:
+
+```text
+PAUSE
+   ↓
+RESUME
+   ↓
+RUNNING
+   ↓
+Có thể tính điểm
+```
+
+---
+
+# 65. Khi GAME OVER
+
+Khi một bên thắng:
+
+```text
+running → gameOver
+```
+
+tất cả button tính điểm phải bị disable:
+
+```text
++ Team 1 → Disabled
+- Team 1 → Disabled
++ Team 2 → Disabled
+- Team 2 → Disabled
+```
+
+Không cho phép người dùng thay đổi điểm sau khi trận đấu đã kết thúc.
+
+Chỉ cho phép:
+
+```text
+RESET
+```
+
+---
+
+# 66. Bảng trạng thái button
+
+Hãy đảm bảo behavior chính xác:
+
+
+| Trạng thái | `+ / -`  | Timer       | START    | PAUSE / RESUME    |
+| ------------ | -------- | ----------- | -------- | ----------------- |
+| `notStarted` | Disabled | 00:00       | Enabled  | Không hiển thị |
+| `running`    | Enabled  | Đang chạy | Disabled | PAUSE             |
+| `paused`     | Disabled | Dừng       | Disabled | RESUME            |
+| `gameOver`   | Disabled | Dừng       | Disabled | Disabled/ẩn      |
+
+---
+
+# 67. Logic kiểm tra trước khi cộng/trừ điểm
+
+Trước khi thực hiện bất kỳ thao tác cộng hoặc trừ điểm nào, phải kiểm tra:
+
+```dart
+if (gameStatus != GameStatus.running) {
+  return;
+}
+```
+
+Chỉ khi:
+
+```dart
+gameStatus == GameStatus.running
+```
+
+mới cho phép:
+
+```text
+Team 1 +
+Team 1 -
+Team 2 +
+Team 2 -
+```
+
+---
+
+# 68. Không được chỉ disable UI
+
+Ngoài việc disable button trên UI, logic xử lý cũng phải kiểm tra `gameStatus`.
+
+Mục đích là tránh trường hợp:
+
+* UI button vô tình được kích hoạt.
+* Một event được gọi trực tiếp.
+* Logic cộng/trừ điểm bị thực thi khi trận chưa START hoặc đang PAUSE.
+
+Phải đảm bảo cả **UI layer và logic layer** đều tuân thủ điều kiện này.
+
+---
+
+# 69. Hành vi mong muốn
+
+### Trường hợp 1: Chưa START
+
+```text
+0 - 0
+00:00
+
+Nhấn + Team 1
+→ Không có thay đổi
+
+Nhấn - Team 1
+→ Không có thay đổi
+```
+
+### Trường hợp 2: START
+
+```text
+START
+↓
+Timer chạy
+↓
+Nhấn + Team 1
+→ 1 - 0
+```
+
+### Trường hợp 3: PAUSE
+
+```text
+1 - 0
+03:25
+
+PAUSE
+↓
+Nhấn + Team 1
+→ Vẫn 1 - 0
+
+Nhấn + Team 2
+→ Vẫn 1 - 0
+```
+
+### Trường hợp 4: RESUME
+
+```text
+RESUME
+↓
+Timer tiếp tục
+↓
+Nhấn + Team 1
+→ 2 - 0
+```
+
+### Trường hợp 5: GAME OVER
+
+```text
+22 - 20
+TEAM 1 WINS
+
+Nhấn +
+→ Không thay đổi
+
+Nhấn -
+→ Không thay đổi
+```
+
+### Trường hợp 6: RESET
+
+```text
+RESET
+↓
+0 - 0
+00:00
+notStarted
+↓
++ / - vẫn Disabled
+↓
+START
+↓
++ / - Enabled
+```
+
+---
+
+# 70. UI Feedback
+
+Button `+` và `-` khi không thể sử dụng nên có trạng thái disabled rõ ràng theo design hiện tại, ví dụ:
+
+* Giảm opacity.
+* Không có hiệu ứng press.
+* Không nhận sự kiện tap.
+* Cursor/interaction thể hiện trạng thái disabled nếu nền tảng hỗ trợ.
+
+Không cần hiển thị popup hoặc thông báo lỗi khi người dùng cố bấm button disabled.
+
+Mục tiêu là behavior trực quan:
+
+> **Chưa START hoặc đang PAUSE = Không thể tính điểm.**
+
+> **Đang RUNNING = Có thể tính điểm.**
+
+> **GAME OVER = Không thể tính điểm.**
+
+Hãy tích hợp logic này với toàn bộ state hiện tại gồm `notStarted`, `running`, `paused`, `gameOver`, đồng thời đảm bảo không làm ảnh hưởng đến Timer, Pause/Resume, luật tính điểm, Winner và Local Match History.
